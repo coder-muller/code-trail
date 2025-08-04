@@ -1,10 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Bug, Folder, History, Lightbulb, ListTodo } from "lucide-react"
+import { Bug, Folder, History, Lightbulb, ListTodo, Users } from "lucide-react"
 import ProjectTab from "./tabs/projectTab"
 import TasksTab from "./tabs/tasksTab"
 import IdeasTab from "./tabs/ideasTab"
 import IssuesTab from "./tabs/issuesTab"
 import HistoryTab from "./tabs/historyTab"
+import MembersTab from "./tabs/membersTab"
 
 export default function ProjectPage({ params }: { params: { projectId: string } }) {
     const { projectId } = params
@@ -33,6 +34,10 @@ export default function ProjectPage({ params }: { params: { projectId: string } 
                         <History />
                         <span className="hidden md:block">History</span>
                     </TabsTrigger>
+                    <TabsTrigger value="members" className="px-4">
+                        <Users />
+                        <span className="hidden md:block">Members</span>
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="project">
                     <ProjectTab
@@ -50,6 +55,9 @@ export default function ProjectPage({ params }: { params: { projectId: string } 
                 </TabsContent>
                 <TabsContent value="history">
                     <HistoryTab />
+                </TabsContent>
+                <TabsContent value="members">
+                    <MembersTab />
                 </TabsContent>
             </Tabs>
         </div>
