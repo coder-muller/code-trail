@@ -10,28 +10,28 @@ export default function ProjectPage({ params }: { params: { projectId: string } 
     const { projectId } = params
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6 max-w-screen-xl mx-auto">
             <Tabs defaultValue="project" className="w-full flex flex-col gap-4">
-                <TabsList>
+                <TabsList className="w-full md:w-fit">
                     <TabsTrigger value="project" className="px-4">
                         <Folder />
-                        Project
+                        <span className="hidden md:block">Project</span>
                     </TabsTrigger>
                     <TabsTrigger value="tasks" className="px-4">
                         <ListTodo />
-                        Tasks
+                        <span className="hidden md:block">Tasks</span>
                     </TabsTrigger>
                     <TabsTrigger value="ideas" className="px-4">
                         <Lightbulb />
-                        Ideas
+                        <span className="hidden md:block">Ideas</span>
                     </TabsTrigger>
                     <TabsTrigger value="issues" className="px-4">
                         <Bug />
-                        Issues
+                        <span className="hidden md:block">Issues</span>
                     </TabsTrigger>
                     <TabsTrigger value="history" className="px-4">
                         <History />
-                        History
+                        <span className="hidden md:block">History</span>
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="project">
