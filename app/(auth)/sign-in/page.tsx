@@ -1,10 +1,23 @@
+"use client";
+
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, Github } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 
 export default function SignIn() {
+
+    const handleSignIn = async () => {
+        await authClient.signIn.social({
+            provider: "github",
+            callbackURL: "/profile",
+            errorCallbackURL: "/sign-in",
+            newUserCallbackURL: "/profile",
+        });
+    }
+
     return (
         <div className="relative flex flex-col items-center justify-center h-screen">
             {/* Navbar */}
@@ -25,7 +38,7 @@ export default function SignIn() {
                     <CardDescription className="text-sm text-muted-foreground">Access your GitHub account to continue</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button variant="default" className="w-full">
+                    <Button variant="default" className="w-full" onClick={handleSignIn}>
                         <Github />
                         Continue with GitHub
                     </Button>
