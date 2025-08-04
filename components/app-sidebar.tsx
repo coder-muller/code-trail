@@ -14,22 +14,22 @@ import { authClient } from "@/lib/auth-client"
 const projects = [
     {
         label: "Projeto 1",
-        href: "/projects/1",
+        href: "/profile/1",
         icon: Folder,
     },
     {
         label: "Projeto 2",
-        href: "/projects/2",
+        href: "/profile/2",
         icon: Folder,
     },
     {
         label: "Projeto 3",
-        href: "/projects/3",
+        href: "/profile/3",
         icon: Folder,
     },
     {
         label: "Projeto 4",
-        href: "/projects/4",
+        href: "/profile/4",
         icon: Folder,
     },
 ]
@@ -91,12 +91,12 @@ export default function AppSidebar() {
                             <SidebarMenuButton className="justify-between w-full cursor-pointer" size="lg">
                                 <div className="flex items-center gap-2">
                                     {session?.user?.image ? (
-                                    <Avatar>
-                                        <AvatarImage src={session?.user?.image ?? ""} alt={""} />
-                                        <AvatarFallback>
-                                            <User className="size-4" />
-                                        </AvatarFallback>
-                                    </Avatar>
+                                        <Avatar>
+                                            <AvatarImage src={session?.user?.image ?? ""} alt={""} />
+                                            <AvatarFallback>
+                                                <User className="size-4" />
+                                            </AvatarFallback>
+                                        </Avatar>
                                     ) : (
                                         <Avatar>
                                             <AvatarFallback>
