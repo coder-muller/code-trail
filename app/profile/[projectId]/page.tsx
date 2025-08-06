@@ -7,8 +7,8 @@ import IssuesTab from "./tabs/issuesTab"
 import HistoryTab from "./tabs/historyTab"
 import MembersTab from "./tabs/membersTab"
 
-export default function ProjectPage({ params }: { params: { projectId: string } }) {
-    const { projectId } = params
+export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
+    const { projectId } = await params
 
     return (
         <div className="flex flex-col gap-6 max-w-screen-xl mx-auto">
