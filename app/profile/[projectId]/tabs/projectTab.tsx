@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Activity, Bug, Calendar, Lightbulb, ListTodo, Target, TrendingUp } from "lucide-react";
+import { useProject } from "@/hooks/use-project";
 
 interface ProjectTabProps {
     projectId: string
@@ -12,11 +13,16 @@ interface ProjectTabProps {
 
 export default function ProjectTab({ projectId }: ProjectTabProps) {
 
+    const { project } = useProject(projectId);
+
+    const tasks = project?.tasks.length || 0;
+    const tasksDone = project?.tasks.filter((task) => task.completedAt !== null).length || 0;
+
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-col">
-                <Label className="text-lg font-bold">Project {projectId}</Label>
-                <Label className="text-sm text-muted-foreground">A calendar that you can use to plan your project</Label>
+                <Label className="text-lg font-bold">Project {project?.name}</Label>
+                <Label className="text-sm text-muted-foreground">{project?.description || "No description"}</Label>
             </div>
 
             <Card>
@@ -27,8 +33,8 @@ export default function ProjectTab({ projectId }: ProjectTabProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col w-full items-start justify-center gap-1">
-                    <Label className="text-lg font-bold">{Number(projectId) * 10}%</Label>
-                    <Progress value={Number(projectId) * 10} className="w-full" />
+                    <Label className="text-lg font-bold">{Number((tasksDone / tasks) * 100) || 0}%</Label>
+                    <Progress value={Number((tasksDone / tasks) * 100) || 0} className="w-full" />
                 </CardContent>
             </Card>
 
@@ -42,7 +48,7 @@ export default function ProjectTab({ projectId }: ProjectTabProps) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex w-full items-center justify-start gap-1">
-                        <Label className="text-2xl font-bold">{Number(projectId) * 2}/{Number(projectId) * 3}</Label>
+                        <Label className="text-2xl font-bold">{tasksDone}/{tasks}</Label>
                     </CardContent>
                     <CardFooter>
                         <Label className="text-sm text-muted-foreground">tasks completed</Label>
