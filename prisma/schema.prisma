@@ -140,6 +140,7 @@ model Task {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+	dueAt DateTime?
 
   @@index([projectId])
   @@map("task")
