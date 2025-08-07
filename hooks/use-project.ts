@@ -1,49 +1,37 @@
-import { useState, useEffect } from "react";
-import axios, { AxiosError } from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { Project } from "@/lib/generated/prisma";
 
+interface ProjectsResponse {
+    ownProjects: Project[];
+    memberProjects: Project[];
+}
+
 export const useProject = () => {
-    const [projects, setProjects] = useState<{ ownProjects: Project[], memberProjects: Project[] }>({ ownProjects: [], memberProjects: [] });
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        getProjects();
-    }, []);
-
-    const getProjects = async () => {
-        setLoading(true);
-        setError(null);
-        try {
+    const { data: projects, isLoading: loading, error } = useQuery<ProjectsResponse, Error>({
+        queryKey: ["projects"],
+        queryFn: async () => {
             const response = await axios.get("/api/project");
-            setProjects(response.data as { ownProjects: Project[], memberProjects: Project[] });
-        } catch (error: unknown) {
-            if (error instanceof AxiosError) {
-                setError(error.response?.data.error);
-            } else {
-                setError("An unknown error occurred");
-            }
-        } finally {
-            setLoading(false);
-        }
-    }
+            return response.data;
+        },
+        initialData: { ownProjects: [], memberProjects: [] }
+    });
 
-    const createProject = async (name: string, description: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            await axios.post("/api/project", { name, description });
-            getProjects();
-        } catch (error: unknown) {
-            if (error instanceof AxiosError) {
-                setError(error.response?.data.error);
-            } else {
-                setError("An unknown error occurred");
-            }
-        } finally {
-            setLoading(false);
-        }
-    }
+    const { mutateAsync: createProject } = useMutation({
+        mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+            await axios.post("/api/project", { name, description: description || "" });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+        },
+    });
 
-    return { projects, loading, error, createProject };
+    return {
+        projects,
+        loading,
+        error: error?.message || null,
+        createProject: (name: string, description?: string) => createProject({ name, description })
+    };
 }
