@@ -18,8 +18,9 @@ model User {
   createdAt     DateTime
   updatedAt     DateTime
 
-  projects       Project[]
+  sessions       Session[]
   accounts       Account[]
+  projects       Project[]
   projectMembers ProjectMember[]
 
   assignedTasks  Task[] @relation("AssignedTo")
@@ -27,6 +28,23 @@ model User {
 
   @@unique([email])
   @@map("user")
+}
+
+// Session model - BetterAuth
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
 }
 
 // Account model - BetterAuth
@@ -49,6 +67,19 @@ model Account {
   @@map("account")
 }
 
+// Verification model - BetterAuth
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// Project model
 model Project {
   id String @id @default(uuid())
 
@@ -67,11 +98,13 @@ model Project {
   @@map("project")
 }
 
+// Project role enum
 enum ProjectRole {
   EDITOR
   VIEWER
 }
 
+// Project member model - Many-to-many relationship between users and projects
 model ProjectMember {
   id String @id @default(uuid())
 
@@ -87,6 +120,7 @@ model ProjectMember {
   @@map("project_member")
 }
 
+// Task model
 model Task {
   id String @id @default(uuid())
 
