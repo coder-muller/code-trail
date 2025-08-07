@@ -1,45 +1,23 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { useSidebar } from "./ui/sidebar"
+import { SidebarGroupLabel, useSidebar } from "./ui/sidebar"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "./ui/sidebar"
 import { cn } from "@/lib/utils"
-import { Blend, ChevronUp, Folder, LogOut, User } from "lucide-react"
+import { Blend, ChevronUp, CircleDashed, Folder, Loader2, LogOut, Triangle, TriangleAlert, User } from "lucide-react"
 import Link from "next/link"
 import React, { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { authClient } from "@/lib/auth-client"
-
-const projects = [
-    {
-        label: "Projeto 1",
-        href: "/profile/1",
-        icon: Folder,
-    },
-    {
-        label: "Projeto 2",
-        href: "/profile/2",
-        icon: Folder,
-    },
-    {
-        label: "Projeto 3",
-        href: "/profile/3",
-        icon: Folder,
-    },
-    {
-        label: "Projeto 4",
-        href: "/profile/4",
-        icon: Folder,
-    },
-]
+import { useProject } from "@/hooks/use-project"
 
 export default function AppSidebar() {
     const { setOpenMobile } = useSidebar()
     const pathname = usePathname()
     const { data: session } = authClient.useSession()
     const router = useRouter()
-
+    const { projects, loading, error } = useProject()
     const [open, setOpen] = useState(false)
 
     const handleLogout = async () => {
@@ -68,18 +46,82 @@ export default function AppSidebar() {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
+                    <SidebarGroupLabel>My Projects</SidebarGroupLabel>
                     <SidebarGroupContent className="flex flex-col gap-2">
                         <SidebarMenu>
-                            {projects.map((item) => (
-                                <SidebarMenuItem key={item.label} onClick={() => setOpenMobile(false)}>
-                                    <SidebarMenuButton tooltip={item.label} asChild className={cn(pathname.includes(item.href) && "bg-sidebar-accent text-sidebar-accent-foreground")}>
-                                        <Link href={item.href}>
-                                            {item.icon && <item.icon className="size-5" />}
-                                            <span>{item.label}</span>
-                                        </Link>
+                            {loading ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <Loader2 className="size-5 animate-spin" />
+                                        <span>Loading projects...</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                            ))}
+                            ) : error ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <TriangleAlert className="size-5" />
+                                        <span className="text-destructive">Error loading projects</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ) : projects.ownProjects.length === 0 ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <CircleDashed className="size-5" />
+                                        <span className="text-muted-foreground">No projects found</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ) : (
+                                projects.ownProjects.map((item) => (
+                                    <SidebarMenuItem key={item.id} onClick={() => setOpenMobile(false)}>
+                                        <SidebarMenuButton tooltip={item.name} asChild className={cn(pathname.includes(item.id) && "bg-sidebar-accent text-sidebar-accent-foreground")}>
+                                            <Link href={`/project/${item.id}`}>
+                                                <Folder className="size-5" />
+                                                <span>{item.name}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
+                            )}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Projects I&apos;m a member of</SidebarGroupLabel>
+                    <SidebarGroupContent className="flex flex-col gap-2">
+                        <SidebarMenu>
+                            {loading ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <Loader2 className="size-5 animate-spin" />
+                                        <span>Loading projects...</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ) : error ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <TriangleAlert className="size-5" />
+                                        <span className="text-destructive">Error loading projects</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ) : projects.memberProjects.length === 0 ? (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <CircleDashed className="size-5" />
+                                        <span className="text-muted-foreground">No projects found</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ) : (
+                                projects.memberProjects.map((item) => (
+                                    <SidebarMenuItem key={item.id} onClick={() => setOpenMobile(false)}>
+                                        <SidebarMenuButton tooltip={item.name} asChild className={cn(pathname.includes(item.id) && "bg-sidebar-accent text-sidebar-accent-foreground")}>
+                                            <Link href={`/project/${item.id}`}>
+                                                <Folder className="size-5" />
+                                                <span>{item.name}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
+                            )}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
