@@ -27,10 +27,12 @@ const taskSchema = z.object({
 	dueAt: z.date().optional(),
 })
 
-export default function TasksTab() {
+interface Props {
+	projectId: string;
+	initialTasks: Task[];
+}
 
-	const pathname = usePathname();
-	const projectId = pathname.split("/")[2];
+export default function TasksTab({ projectId, initialTasks }: Props) {
 
 	const form = useForm<z.infer<typeof taskSchema>>({
 		resolver: zodResolver(taskSchema),
@@ -42,17 +44,13 @@ export default function TasksTab() {
 	});
 
 	const [addingTask, setAddingTask] = useState(false);
-	const [tasks, setTasks] = useState<Task[]>([]);
-	const fetchTasks = async () => {
-		axios.get(`/api/tasks?projectId=${projectId}`)
-			.then((response) => {
-				setTasks(response.data.tasks);
-				console.log(response.data.tasks)
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+	const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+	const refetch = async () => {
+		const { data } = await axios.get(`/api/tasks?projectId=${projectId}`)
+		setTasks(data.tasks);
 	}
+
 
 	const sortTasks = (tasks: Task[]) => {
 		return tasks.slice().sort((a, b) => {
@@ -79,7 +77,7 @@ export default function TasksTab() {
 		axios.post(`/api/tasks`, body)
 			.then((response) => {
 				console.log(response)
-				fetchTasks();
+				refetch()
 			})
 			.catch((error) => {
 				console.error(error);
@@ -91,16 +89,12 @@ export default function TasksTab() {
 		axios.patch(`/api/tasks/${id}`, { completedAt: new Date() })
 			.then((response) => {
 				console.log(response)
-				fetchTasks();
+				refetch()
 			})
 			.catch((error) => {
 				console.error(error);
 			});
 	}
-
-	useEffect(() => {
-		fetchTasks();
-	}, [projectId]);
 
 	return (
 		<div className="flex flex-col gap-4">
