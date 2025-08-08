@@ -2,15 +2,14 @@
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Check, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { CalendarIcon, Check, ChevronLeft, ChevronRight, EllipsisVertical, Plus, Search, Trash } from "lucide-react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const taskSchema = z.object({
 	title: z.string(),
@@ -86,7 +86,14 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 	}
 
 	const toggleTask = (id: string) => {
-		axios.patch(`/api/tasks/${id}`, { completedAt: new Date() })
+		axios.patch(`/api/tasks/${id}/toggle`)
+			.then(() => refetch())
+			.catch(console.error)
+	}
+
+	const deleteTask = (id: string) => {
+		console.log(id)
+		axios.delete(`/api/tasks/${id}`)
 			.then((response) => {
 				console.log(response)
 				refetch()
@@ -233,8 +240,10 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 												onCheckedChange={() => toggleTask(task.id)}
 											/>
 											<div className="flex flex-col">
-												<p className="text-sm font-medium">{task.title}</p>
-												<p className="text-xs text-muted-foreground">
+												<p className={`text-sm font-medium ${task.completedAt ? "line-through text-muted-foreground" : ""}`}>
+													{task.title}
+												</p>
+												<p className={`text-xs text-muted-foreground ${task.completedAt ? "line-through" : ""}`}>
 													{task.description}
 												</p>
 											</div>
@@ -245,6 +254,19 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 													Due: {new Date(task.dueAt).toLocaleDateString()}
 												</Badge>
 											}
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button variant="ghost" size="icon">
+														<EllipsisVertical className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent className="w-auto p-1" align="start">
+													<DropdownMenuItem onClick={() => deleteTask(task.id)}>
+														<Trash className="size-4" />
+														<span>Delete Task</span>
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
 										</div>
 									</div>
 								)
