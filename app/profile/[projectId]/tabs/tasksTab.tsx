@@ -47,6 +47,13 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 	const [tasks, setTasks] = useState<Task[]>(initialTasks);
 	const [allTasks, setAllTasks] = useState<Task[]>(initialTasks);
 	const [search, setSearch] = useState("");
+	const [itemsPerPage, setItemsPerPage] = useState(initialTasks.length >= 10 ? 10 : initialTasks.length);
+	const [currentPage, setCurrentPage] = useState(1);
+
+	const totalPages = Math.ceil(allTasks.length / itemsPerPage);
+
+	const paginatedTasks = allTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
 
 	const refetch = async () => {
 		const { data } = await axios.get(`/api/tasks?projectId=${projectId}`)
@@ -112,6 +119,18 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 			return task.title.toLowerCase().includes(e.target.value.toLowerCase())
 		})
 		setTasks(filteredTasks);
+	}
+
+	const nextPage = () => {
+		if (currentPage < totalPages) {
+			setCurrentPage(prev => prev + 1);
+		}
+	}
+
+	const prevPage = () => {
+		if (currentPage > 1) {
+			setCurrentPage(prev => prev - 1);
+		}
 	}
 
 	return (
@@ -243,7 +262,7 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 								</div>
 							</>
 							:
-							sortedTasks.map((task) => {
+							paginatedTasks.map((task) => {
 								return (
 									<div key={task.id} className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
 										<div className="flex items-center gap-4">
@@ -287,24 +306,40 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 				</div>
 
 				<div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0">
-					<Select>
+					<Select
+						value={String(itemsPerPage)}
+						onValueChange={(value) => {
+							setItemsPerPage(Number(value));
+							setCurrentPage(1)
+						}}
+					>
 						<SelectTrigger className="hidden md:flex">
 							<SelectValue placeholder="Items per page" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="10">10 items</SelectItem>
-							<SelectItem value="20">20 items</SelectItem>
-							<SelectItem value="30">30 items</SelectItem>
+							{tasks.length > 10 && <SelectItem value="10">10 items/page</SelectItem>}
+							{tasks.length > 30 && <SelectItem value="30">30 items/page</SelectItem>}
+							<SelectItem value={`${tasks.length}`}>{tasks.length} items/page</SelectItem>
 						</SelectContent>
 					</Select>
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="icon">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={prevPage}
+							disabled={currentPage === 1}
+						>
 							<ChevronLeft className="size-4" />
 						</Button>
 						<span className="text-sm text-muted-foreground">
-							1 of 10
+							{currentPage} of {totalPages}
 						</span>
-						<Button variant="outline" size="icon">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={nextPage}
+							disabled={currentPage === totalPages}
+						>
 							<ChevronRight className="size-4" />
 						</Button>
 					</div>
