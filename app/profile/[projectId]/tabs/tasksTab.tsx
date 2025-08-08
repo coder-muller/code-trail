@@ -45,12 +45,14 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 
 	const [addingTask, setAddingTask] = useState(false);
 	const [tasks, setTasks] = useState<Task[]>(initialTasks);
+	const [allTasks, setAllTasks] = useState<Task[]>(initialTasks);
+	const [search, setSearch] = useState("");
 
 	const refetch = async () => {
 		const { data } = await axios.get(`/api/tasks?projectId=${projectId}`)
+		setAllTasks(data.tasks);
 		setTasks(data.tasks);
 	}
-
 
 	const sortTasks = (tasks: Task[]) => {
 		return tasks.slice().sort((a, b) => {
@@ -103,6 +105,15 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 			});
 	}
 
+	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setSearch(e.target.value);
+		if (search == "") return setTasks(allTasks);
+		const filteredTasks = allTasks.filter((task) => {
+			return task.title.toLowerCase().includes(e.target.value.toLowerCase())
+		})
+		setTasks(filteredTasks);
+	}
+
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col">
@@ -118,6 +129,7 @@ export default function TasksTab({ projectId, initialTasks }: Props) {
 					<Input
 						placeholder="Search tasks"
 						className="pl-8"
+						onChange={(e) => handleSearch(e)}
 					/>
 				</div>
 
