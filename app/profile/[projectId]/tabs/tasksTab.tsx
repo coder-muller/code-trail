@@ -1,13 +1,15 @@
 "use client"
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { CalendarIcon, Check, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -15,13 +17,14 @@ import { z } from "zod";
 import { Task } from "@/types/tasks";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import Calendar24 from "@/components/calendar-24";
 import axios from "axios";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 const taskSchema = z.object({
 	title: z.string(),
 	description: z.string(),
-	dueAt: z.date(),
+	dueAt: z.date().optional(),
 })
 
 export default function TasksTab() {
@@ -34,13 +37,12 @@ export default function TasksTab() {
 		defaultValues: {
 			title: "",
 			description: "",
-			dueAt: new Date(),
+			dueAt: undefined,
 		},
 	});
 
 	const [addingTask, setAddingTask] = useState(false);
 	const [tasks, setTasks] = useState<Task[]>([]);
-
 	const fetchTasks = async () => {
 		axios.get(`/api/tasks?projectId=${projectId}`)
 			.then((response) => {
@@ -51,8 +53,26 @@ export default function TasksTab() {
 			});
 	}
 
+	const sortTasks = (tasks: Task[]) => {
+		return tasks.slice().sort((a, b) => {
+			if (a.completedAt && !b.completedAt) return 1;
+			if (!a.completedAt && b.completedAt) return -1;
+
+			if (a.dueAt && b.dueAt) {
+				return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+			}
+
+			if (a.dueAt && !b.dueAt) return -1;
+			if (!a.dueAt && b.dueAt) return 1;
+
+			return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+		})
+	}
+
+	const sortedTasks = sortTasks(tasks);
+
 	const addTask = async (values: z.infer<typeof taskSchema>) => {
-		toast.success(`Task "${values.title}" was added successfully!`)
+		toast.success("Task added successfully")
 		console.log(values)
 		const body = { ...values, projectId: projectId }
 		axios.post(`/api/tasks`, body)
@@ -65,6 +85,10 @@ export default function TasksTab() {
 			});
 		setAddingTask(false);
 	}
+
+	useEffect(() => {
+		fetchTasks();
+	}, [projectId]);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -107,103 +131,126 @@ export default function TasksTab() {
 				</div>
 				<div className="flex flex-col space-y-4">
 					{
-						addingTask ?
-							<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
-								<Form {...form}>
-									<form onSubmit={form.handleSubmit(addTask)} className="w-full flex flex-col gap-2">
-										<div className="flex flex-col gap-2 w-full">
-											<FormField
-												control={form.control}
-												name="title"
-												render={({ field }) => (
-													<FormItem className="w-full">
-														<FormControl className="w-full">
-															<Input required placeholder="Add a title" className="w-full h-full" {...field} />
-														</FormControl>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
-											<FormField
-												control={form.control}
-												name="description"
-												render={({ field }) => (
-													<FormItem>
-														<FormControl>
-															<Textarea placeholder="Maybe also add a description" className="w-full h-full" {...field} />
-														</FormControl>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
+						addingTask &&
+						<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
+							<Form {...form}>
+								<form onSubmit={form.handleSubmit(addTask)} className="w-full flex flex-col gap-2">
+									<div className="flex flex-col gap-2 w-full">
+										<FormField
+											control={form.control}
+											name="title"
+											render={({ field }) => (
+												<FormItem className="w-full">
+													<FormControl className="w-full">
+														<Input required placeholder="Add a title" className="w-full h-full" {...field} />
+													</FormControl>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+										<FormField
+											control={form.control}
+											name="description"
+											render={({ field }) => (
+												<FormItem>
+													<FormControl>
+														<Textarea placeholder="Maybe also add a description" className="w-full h-full" {...field} />
+													</FormControl>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+									</div>
+									<div className="flex w-full justify-between gap-2">
+										<FormField
+											control={form.control}
+											name="dueAt"
+											render={({ field }) => (
+												<FormItem className="flex gap-2">
+													<FormLabel className="text-xs text-muted-foreground">Wanna add a due date?</FormLabel>
+													<Popover>
+														<PopoverTrigger asChild>
+															<FormControl>
+																<Button
+																	variant={"outline"}
+																	className={cn(
+																		"w-[240px] pl-3 text-left font-normal",
+																		!field.value && "text-muted-foreground"
+																	)}
+																>
+																	{field.value ? (
+																		format(field.value, "PPP")
+																	) : (
+																		<span>Pick a date</span>
+																	)}
+																	<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+																</Button>
+
+															</FormControl>
+														</PopoverTrigger>
+														<PopoverContent className="w-auto p-0" align="start">
+															<Calendar
+																mode="single"
+																selected={new Date(field.value!)}
+																onSelect={field.onChange}
+																captionLayout="dropdown"
+															/>
+														</PopoverContent>
+													</Popover>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+										<Button type="submit" variant="default" className="h-full self-end">
+											<Check />
+											<span className="italic">Add Task</span>
+										</Button>
+									</div>
+								</form>
+							</Form>
+						</div>
+
+					}{
+						tasks.length === 0 ?
+							<>
+								<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
+									<div className="flex items-center gap-4">
+										<Checkbox />
+										<div className="flex flex-col">
+											<p className="text-sm font-medium">Start the UI for the task</p>
+											<p className="text-xs text-muted-foreground">
+												Start the UI for the task. This task is a placeholder for the task you want to create.
+											</p>
 										</div>
-										<div className="flex w-full justify-between gap-2">
-											<FormField
-												control={form.control}
-												name="description"
-												render={({ field }) => (
-													<FormItem className="flex gap-2">
-														<FormLabel className="text-xs text-muted-foreground">Wanna add a due date?</FormLabel>
-														<FormControl>
-															<Calendar24 />
-														</FormControl>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
-											<Button type="submit" variant="default" className="h-full self-end">
-												<Check />
-												<span className="italic">Add Task</span>
-											</Button>
-										</div>
-									</form>
-								</Form>
-							</div>
+									</div>
+								</div>
+								<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
+									<p>You currently have no tasks. Maybe try adding one?</p>
+								</div>
+							</>
 							:
-							tasks.length === 0 ?
-								<>
-									<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
+							sortedTasks.map((task) => {
+								return (
+									<div key={task.id} className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
 										<div className="flex items-center gap-4">
 											<Checkbox />
 											<div className="flex flex-col">
-												<p className="text-sm font-medium">Start the UI for the task</p>
+												<p className="text-sm font-medium">{task.title}</p>
 												<p className="text-xs text-muted-foreground">
-													Start the UI for the task. This task is a placeholder for the task you want to create.
+													{task.description}
 												</p>
 											</div>
 										</div>
-									</div>
-									<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
-										<p>You currently have no tasks. Maybe try adding one?</p>
-									</div>
-								</>
-								:
-								tasks.map((task) => {
-									return (
-										<div key={task.id} className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
-											<div className="flex items-center gap-4">
-												<Checkbox />
-												<div className="flex flex-col">
-													<p className="text-sm font-medium">{task.title}</p>
-													<p className="text-xs text-muted-foreground">
-														{task.description}
-													</p>
-												</div>
-											</div>
-											<div className="flex items-center gap-2">
-												{task.dueAt ?
-													<Badge variant="outline">
-														Due: {task.dueAt.toLocaleDateString()}
-													</Badge>
-													:
-													<Badge variant="outline">
-														Due: No due date
-													</Badge>
-												}
-											</div>
+										<div className="flex items-center gap-2">
+											{task.dueAt &&
+												<Badge variant={`${new Date(task.dueAt) < new Date() ? "destructive" : "outline"}`}>
+													Due: {new Date(task.dueAt).toLocaleDateString()}
+												</Badge>
+											}
 										</div>
-									)
-								})
+									</div>
+								)
+							})
 					}
 				</div>
 

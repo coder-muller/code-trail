@@ -10,14 +10,14 @@ datasource db {
 
 // User model - BetterAuth
 model User {
-        id            String    @id
+        id            String   @id
         name          String
         email         String
         emailVerified Boolean
         image         String?
         createdAt     DateTime
         updatedAt     DateTime
-        dueAt         DateTime?
+        dueAt         String?
 
         sessions       Session[]
         accounts       Account[]
