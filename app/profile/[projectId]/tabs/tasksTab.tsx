@@ -47,6 +47,7 @@ export default function TasksTab() {
 		axios.get(`/api/tasks?projectId=${projectId}`)
 			.then((response) => {
 				setTasks(response.data.tasks);
+				console.log(response.data.tasks)
 			})
 			.catch((error) => {
 				console.error(error);
@@ -84,6 +85,17 @@ export default function TasksTab() {
 				console.error(error);
 			});
 		setAddingTask(false);
+	}
+
+	const toggleTask = (id: string) => {
+		axios.patch(`/api/tasks/${id}`, { completedAt: new Date() })
+			.then((response) => {
+				console.log(response)
+				fetchTasks();
+			})
+			.catch((error) => {
+				console.error(error);
+			});
 	}
 
 	useEffect(() => {
@@ -213,17 +225,6 @@ export default function TasksTab() {
 					}{
 						tasks.length === 0 ?
 							<>
-								<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
-									<div className="flex items-center gap-4">
-										<Checkbox />
-										<div className="flex flex-col">
-											<p className="text-sm font-medium">Start the UI for the task</p>
-											<p className="text-xs text-muted-foreground">
-												Start the UI for the task. This task is a placeholder for the task you want to create.
-											</p>
-										</div>
-									</div>
-								</div>
 								<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
 									<p>You currently have no tasks. Maybe try adding one?</p>
 								</div>
@@ -233,7 +234,10 @@ export default function TasksTab() {
 								return (
 									<div key={task.id} className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4 hover:bg-muted/40 transition-colors cursor-pointer">
 										<div className="flex items-center gap-4">
-											<Checkbox />
+											<Checkbox
+												checked={!!task.completedAt}
+												onCheckedChange={() => toggleTask(task.id)}
+											/>
 											<div className="flex flex-col">
 												<p className="text-sm font-medium">{task.title}</p>
 												<p className="text-xs text-muted-foreground">

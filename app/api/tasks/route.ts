@@ -50,3 +50,26 @@ export async function POST(request: NextRequest) {
 
 	return NextResponse.json(task);
 }
+
+export async function PATCH(request: NextRequest) {
+	const session = await auth.api.getSession({
+		headers: request.headers,
+	});
+
+	if (!session) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
+	const { id } = await request.json();
+
+	const task = await prisma.task.update({
+		where: {
+			id: id,
+		},
+		data: {
+			completedAt: new Date(),
+		},
+	});
+
+	return NextResponse.json(task);
+}
