@@ -1,5 +1,6 @@
 "use client"
 import { Badge } from "@/components/ui/badge";
+import { usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,16 +13,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Task } from "@/types/tasks";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import Calendar24 from "@/components/calendar-24";
+import axios from "axios";
 
 const taskSchema = z.object({
 	title: z.string(),
 	description: z.string(),
 	dueAt: z.date(),
-	assignee: z.string(),
 })
 
 export default function TasksTab() {
+
+	const pathname = usePathname();
+	const projectId = pathname.split("/")[2];
 
 	const form = useForm<z.infer<typeof taskSchema>>({
 		resolver: zodResolver(taskSchema),
@@ -29,7 +35,6 @@ export default function TasksTab() {
 			title: "",
 			description: "",
 			dueAt: new Date(),
-			assignee: "",
 		},
 	});
 
@@ -37,19 +42,29 @@ export default function TasksTab() {
 	const [tasks, setTasks] = useState<Task[]>([]);
 
 	const fetchTasks = async () => {
-		const response = await fetch("/api/tasks");
-		const data = await response.json();
-		setTasks(data);
+		axios.get(`/api/tasks?projectId=${projectId}`)
+			.then((response) => {
+				setTasks(response.data.tasks);
+			})
+			.catch((error) => {
+				console.error(error);
+			});
 	}
 
 	const addTask = async (values: z.infer<typeof taskSchema>) => {
-		toast.success(values.title)
+		toast.success(`Task "${values.title}" was added successfully!`)
+		console.log(values)
+		const body = { ...values, projectId: projectId }
+		axios.post(`/api/tasks`, body)
+			.then((response) => {
+				console.log(response)
+				fetchTasks();
+			})
+			.catch((error) => {
+				console.error(error);
+			});
 		setAddingTask(false);
 	}
-
-	useEffect(() => {
-		fetchTasks();
-	})
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -95,22 +110,52 @@ export default function TasksTab() {
 						addingTask ?
 							<div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-border p-4">
 								<Form {...form}>
-									<form onSubmit={form.handleSubmit(addTask)} className="w-full flex gap-2">
-										<FormField
-											control={form.control}
-											name="title"
-											render={({ field }) => (
-												<FormItem className="w-full">
-													<FormControl className="w-full">
-														<Input placeholder="Title" className="w-full h-full" {...field} />
-													</FormControl>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-										<Button type="submit" variant="default" className="h-full">
-											<Check />
-										</Button>
+									<form onSubmit={form.handleSubmit(addTask)} className="w-full flex flex-col gap-2">
+										<div className="flex flex-col gap-2 w-full">
+											<FormField
+												control={form.control}
+												name="title"
+												render={({ field }) => (
+													<FormItem className="w-full">
+														<FormControl className="w-full">
+															<Input required placeholder="Add a title" className="w-full h-full" {...field} />
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+											<FormField
+												control={form.control}
+												name="description"
+												render={({ field }) => (
+													<FormItem>
+														<FormControl>
+															<Textarea placeholder="Maybe also add a description" className="w-full h-full" {...field} />
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+										</div>
+										<div className="flex w-full justify-between gap-2">
+											<FormField
+												control={form.control}
+												name="description"
+												render={({ field }) => (
+													<FormItem className="flex gap-2">
+														<FormLabel className="text-xs text-muted-foreground">Wanna add a due date?</FormLabel>
+														<FormControl>
+															<Calendar24 />
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+											<Button type="submit" variant="default" className="h-full self-end">
+												<Check />
+												<span className="italic">Add Task</span>
+											</Button>
+										</div>
 									</form>
 								</Form>
 							</div>
